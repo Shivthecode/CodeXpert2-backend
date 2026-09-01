@@ -4,7 +4,12 @@ const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: String, enum: ['leader', 'member'], default: 'member' }
+  role: { type: String, enum: ['leader', 'member'], default: 'member' },
+  
+  // 🔴 NAYI FIELDS: OTP aur Expiry save karne ke liye
+  resetPasswordOtp: { type: String },
+  resetPasswordExpires: { type: Date }
+  
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);

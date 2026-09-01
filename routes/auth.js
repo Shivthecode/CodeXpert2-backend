@@ -2,6 +2,7 @@ const router = require('express').Router();
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const sendEmail = require('../utils/sendEmail');
 
 // 1. SIGNUP API
 router.post('/signup', async (req, res) => {
@@ -67,7 +68,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// 3. GOOGLE LOGIN / SIGNUP API (Updated with Fixed Dummy Password)
+// 3. GOOGLE LOGIN / SIGNUP API
 router.post('/google-login', async (req, res) => {
   try {
     const { name, email, role } = req.body;
@@ -75,7 +76,6 @@ router.post('/google-login', async (req, res) => {
     let user = await User.findOne({ email });
 
     if (!user) {
-      // Secure random dummy password taaki Mongoose validation fail na ho
       const dummyPassword = "GoogleAuthUser123!@#" + Math.random().toString(36).slice(-8);
       const salt = await bcrypt.genSalt(10);
       const hashedDummyPassword = await bcrypt.hash(dummyPassword, salt);
@@ -106,7 +106,79 @@ router.post('/google-login', async (req, res) => {
     });
 
   } catch (error) {
-    console.log("Google Login Backend Error: ", error); // Yeh terminal mein asli error print kar dega agar kuch gadbad hui
+    console.log("Google Login Backend Error: ", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 4. FORGOT PASSWORD - SEND OTP
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User with this email does not exist." });
+    }
+
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    
+    user.resetPasswordOtp = otp;
+    user.resetPasswordExpires = Date.now() + 10 * 60 * 1000; 
+    await user.save();
+
+    await sendEmail(user.email, otp);
+
+    res.status(200).json({ message: "OTP sent successfully to your email." });
+  } catch (error) {
+    console.error("Forgot Password Error: ", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 5. VERIFY OTP
+router.post('/verify-otp', async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    const user = await User.findOne({ 
+      email, 
+      resetPasswordOtp: otp,
+      resetPasswordExpires: { $gt: Date.now() } 
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid OTP or OTP has expired." });
+    }
+
+    res.status(200).json({ message: "OTP verified successfully." });
+  } catch (error) {
+    console.error("Verify OTP Error: ", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 6. RESET PASSWORD
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    
+    user.resetPasswordOtp = undefined;
+    user.resetPasswordExpires = undefined;
+    
+    await user.save();
+
+    res.status(200).json({ message: "Password updated successfully. You can now login." });
+  } catch (error) {
+    console.error("Reset Password Error: ", error);
     res.status(500).json({ error: error.message });
   }
 });

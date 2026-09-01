@@ -7,7 +7,7 @@ const sendEmail = async (email, otp) => {
       {
         sender: { 
           name: 'CodeXpert', 
-          email: 'codexpert.work@gmail.com' // Wo email jisse Brevo account banaya hai
+          email: 'codexpert.work@gmail.com' 
         },
         to: [{ email: email }],
         subject: 'CodeXpert - Password Reset OTP',
@@ -23,7 +23,7 @@ const sendEmail = async (email, otp) => {
       {
         headers: {
           'accept': 'application/json',
-          'api-key': 'process.env.BREVO_API_KEY', // 🔴 Yahan apni API Key daal dena
+          'api-key': process.env.BREVO_API_KEY, // 🔴 QUOTES HATA DIYE HAIN!
           'content-type': 'application/json'
         }
       }

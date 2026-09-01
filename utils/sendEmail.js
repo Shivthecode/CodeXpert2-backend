@@ -1,32 +1,33 @@
 const nodemailer = require('nodemailer');
+const dns = require('dns');
+
+// 🔴 RENDER FIX: Yeh line Node.js ko force karegi ki IPv4 use kare (IPv6 ENETUNREACH error fix)
+dns.setDefaultResultOrder('ipv4first');
 
 const sendEmail = async (email, otp) => {
-  // 1. Transporter banate hain (Render aur production ke liye optimize kiya hua)
   const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com', // Explicit SMTP server add kiya
-    port: 465,              // Secure port
-    secure: true,           // 465 ke liye true rakhte hain
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
     auth: {
-      user: 'codexpert.work@gmail.com',   // Tumhara Gmail address
-      pass: 'kzvktmrjhrksxnkz'            // 🔴 16-digit App Password (Bina spaces ke)
+      user: 'codexpert.work@gmail.com',   
+      pass: 'kzvktmrjhrksxnkz'            
     }
   });
 
-  // 2. Email ki details
   const mailOptions = {
-    from: 'codexpert.work@gmail.com', 
-    to: email, 
+    from: 'codexpert.work@gmail.com',
+    to: email,
     subject: 'CodeXpert - Password Reset OTP',
     text: `Your OTP for password reset is: ${otp}. It is valid for 10 minutes.`
   };
 
-  // 3. Email send karna (with Error Handling)
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`Email successfully sent to ${email}`); // Agar pass ho gaya toh Render log me dikhega
+    console.log(`Email successfully sent to ${email} using IPv4!`);
   } catch (error) {
-    console.error("Nodemailer failed to send email: ", error); // Agar fail hua toh asli wajah dikhegi
-    throw error; // Error ko aage bhejna zaroori hai taaki frontend par "Failed to send" dikhe
+    console.error("Nodemailer failed to send email: ", error);
+    throw error; 
   }
 };
 

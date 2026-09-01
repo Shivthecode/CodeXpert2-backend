@@ -3,14 +3,14 @@ const nodemailer = require('nodemailer');
 const sendEmail = async (email, otp) => {
   const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465,              // Wapas 465 use karenge jo zyada secure hai
-    secure: true,           
+    port: 587,              // 🔴 Port 587 use karenge
+    secure: false,          // 🔴 587 ke liye secure false hota hai
+    requireTLS: true,       // 🔴 TLS on karenge
     auth: {
       user: 'codexpert.work@gmail.com',   
       pass: 'kzvktmrjhrksxnkz'            
     },
-    // 🔴 ULTIMATE FIX: Nodemailer ko strictly IPv4 use karne ka order
-    family: 4 
+    family: 4               // 🔴 IPv6 block karne ke liye (Ye zaroori hai)
   });
 
   const mailOptions = {
@@ -22,7 +22,7 @@ const sendEmail = async (email, otp) => {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`Email successfully sent to ${email} via IPv4!`);
+    console.log(`Email successfully sent to ${email} via Port 587 & IPv4!`);
   } catch (error) {
     console.error("Nodemailer failed to send email: ", error);
     throw error; 

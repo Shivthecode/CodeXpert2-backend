@@ -16,6 +16,10 @@ exports.sendNotice = async (req, res) => {
     });
 
     await newNotice.save();
+
+    // 🔴 Socket.io signal: Naya notice publish hote hi sabko real-time notification milega
+    if (req.io) req.io.emit('noticeUpdated');
+
     res.status(200).json({ message: "Notice successfully send ho gaya hai!", notice: newNotice });
   } catch (error) {
     console.error("Send notice error: ", error);

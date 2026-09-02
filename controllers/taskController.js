@@ -17,6 +17,10 @@ exports.createTask = async (req, res) => {
     });
 
     await newTask.save();
+    
+    // 🔴 Socket.io signal: Naya task aane par real-time update
+    if (req.io) req.io.emit('taskUpdated'); 
+    
     res.status(200).json({ message: "Task successfully assign kar diya gaya hai!", task: newTask });
   } catch (error) {
     console.error("Create task error: ", error);
@@ -51,6 +55,9 @@ exports.submitTaskForReview = async (req, res) => {
     task.status = 'in_review';
     await task.save();
 
+    // 🔴 Socket.io signal: Leader ki screen par task review me instantly dikhega
+    if (req.io) req.io.emit('taskUpdated');
+
     res.status(200).json({ message: "Task review ke liye leader ke paas bhej diya gaya hai!" });
   } catch (error) {
     console.error("Submit task error: ", error);
@@ -69,6 +76,9 @@ exports.approveTask = async (req, res) => {
     task.status = 'completed';
     await task.save();
 
+    // 🔴 Socket.io signal: Member ko instantly pata chalega ki task approve ho gaya
+    if (req.io) req.io.emit('taskUpdated');
+
     res.status(200).json({ message: "Task successfully approve ho gaya hai!" });
   } catch (error) {
     console.error("Approve task error: ", error);
@@ -76,7 +86,7 @@ exports.approveTask = async (req, res) => {
   }
 };
 
-// 5. 🔴 Member task ko 'in-progress' (Working) state mein daale
+// 5. Member task ko 'in-progress' (Working) state mein daale
 exports.updateTaskProgress = async (req, res) => {
   try {
     const { taskId, status } = req.body; // status = 'in-progress'
@@ -86,6 +96,9 @@ exports.updateTaskProgress = async (req, res) => {
 
     task.status = status;
     await task.save();
+
+    // 🔴 Socket.io signal: Leader ko instantly task in-progress dikhega
+    if (req.io) req.io.emit('taskUpdated');
 
     res.status(200).json({ message: "Task status update ho gaya hai!" });
   } catch (error) {

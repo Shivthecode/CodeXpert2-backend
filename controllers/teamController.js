@@ -18,6 +18,9 @@ exports.createTeam = async (req, res) => {
 
     const savedTeam = await newTeam.save();
 
+    // 🔴 Socket: Team list update (Optional par safe practice hai)
+    if (req.io) req.io.emit('teamUpdated');
+
     res.status(200).json({ message: "Team created successfully!", team: savedTeam });
   } catch (error) {
     console.error("Create team error: ", error);
@@ -29,7 +32,7 @@ exports.createTeam = async (req, res) => {
 exports.sendTeamInvite = async (req, res) => {
   try {
     const { teamId, memberEmail } = req.body;
-    const leaderId = req.user.id; // Yeh auth middleware se aayega
+    const leaderId = req.user.id; 
 
     // Check karo jisko invite bhej rahe hain wo user system mein hai ya nahi
     const member = await User.findOne({ email: memberEmail });
@@ -48,6 +51,9 @@ exports.sendTeamInvite = async (req, res) => {
 
     await invite.save();
 
+    // 🔴 Socket: Navbar par instantly notification dot dikhane ke liye
+    if (req.io) req.io.emit('notificationUpdated');
+
     res.status(200).json({ message: "Invitation successfully bhej diya gaya hai!" });
   } catch (error) {
     console.error("Invite send error: ", error);
@@ -58,7 +64,7 @@ exports.sendTeamInvite = async (req, res) => {
 // 3. Member: Invite ko Accept ya Reject karne ka function
 exports.respondToInvite = async (req, res) => {
   try {
-    const { notificationId, action } = req.body; // action = 'accepted' ya 'rejected'
+    const { notificationId, action } = req.body; 
     const memberId = req.user.id;
 
     // Check karo notification exist karti hai ya nahi
@@ -74,8 +80,14 @@ exports.respondToInvite = async (req, res) => {
 
       // Member ko Team ke database mein add kar do
       await Team.findByIdAndUpdate(notification.team, {
-        $addToSet: { members: memberId } // Duplicate se bachne ke liye
+        $addToSet: { members: memberId } 
       });
+
+      // 🔴 Socket: Leader ka MyTeams aur member ka notification dono instantly update honge
+      if (req.io) {
+        req.io.emit('teamUpdated'); 
+        req.io.emit('notificationUpdated');
+      }
 
       return res.status(200).json({ message: "Badhai ho! Aapne team join kar li hai." });
     } 
@@ -83,6 +95,10 @@ exports.respondToInvite = async (req, res) => {
     else if (action === 'rejected') {
       notification.status = 'rejected';
       await notification.save();
+      
+      // 🔴 Socket: Notification UI se hatane ke liye
+      if (req.io) req.io.emit('notificationUpdated');
+
       return res.status(200).json({ message: "Aapne invitation reject kar diya hai." });
     } 
     else {
@@ -147,6 +163,9 @@ exports.deleteTeam = async (req, res) => {
     await Team.findByIdAndDelete(teamId);
     await Notification.deleteMany({ team: teamId });
 
+    // 🔴 Socket: Teams delete hote hi sabki list se gayab ho jayegi
+    if (req.io) req.io.emit('teamUpdated');
+
     res.status(200).json({ message: "Team successfully delete ho gayi hai." });
   } catch (error) {
     console.error("Delete team error: ", error);
@@ -170,6 +189,9 @@ exports.removeMember = async (req, res) => {
     team.members = team.members.filter(m => m.toString() !== memberId);
     await team.save();
 
+    // 🔴 Socket: Member remove hote hi UI update hoga
+    if (req.io) req.io.emit('teamUpdated');
+
     res.status(200).json({ message: "Member ko team se hata diya gaya hai." });
   } catch (error) {
     console.error("Remove member error: ", error);
@@ -177,7 +199,7 @@ exports.removeMember = async (req, res) => {
   }
 };
 
-// 8. 🔴 Sirf Member wali teams fetch karne ka function (Member dashboard ke liye)
+// 8. Sirf Member wali teams fetch karne ka function (Member dashboard ke liye)
 exports.getMemberTeams = async (req, res) => {
   try {
     const userId = req.user.id;

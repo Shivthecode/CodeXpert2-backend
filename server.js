@@ -6,8 +6,11 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 require('dotenv').config(); // .env file ko read karne ke liye
 
-// Auth Routes import kar rahe hain
+// Routes import kar rahe hain
 const authRoutes = require('./routes/auth');
+const teamRoutes = require('./routes/teamRoutes'); 
+const taskRoutes = require('./routes/tasks'); 
+const noticeRoutes = require('./routes/noticeRoutes'); // 🔴 Naya Notice Route Import Kiya
 
 // Server setup
 const app = express();
@@ -27,6 +30,9 @@ mongoose.connect(process.env.MONGO_URI)
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/teams', teamRoutes); 
+app.use('/api/tasks', taskRoutes); 
+app.use('/api/notices', noticeRoutes); // 🔴 Naya Notice Route Server Se Jod Diya
 
 // Test Route
 app.get('/', (req, res) => {
